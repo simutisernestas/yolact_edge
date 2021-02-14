@@ -1,10 +1,10 @@
-from utils import timer
-from data import *
-from utils.augmentations import SSDAugmentation, SSDAugmentationVideo, BaseTransform, BaseTransformVideo
-from utils.functions import MovingAverage, SavePath
-from layers.modules import MultiBoxLoss
-from layers.modules.optical_flow_loss import OpticalFlowLoss
-from yolact import Yolact
+from yolact_edge.utils import timer
+from yolact_edge.data import *
+from yolact_edge.utils.augmentations import SSDAugmentation, SSDAugmentationVideo, BaseTransform, BaseTransformVideo
+from yolact_edge.utils.functions import MovingAverage, SavePath
+from yolact_edge.layers.modules import MultiBoxLoss
+from yolact_edge.layers.modules.optical_flow_loss import OpticalFlowLoss
+from yolact_edge.yolact import Yolact
 import os
 import sys
 import time
@@ -19,11 +19,11 @@ import torch.utils.data as data
 import numpy as np
 import argparse
 import datetime
-from utils.tensorboard_helper import SummaryHelper
-import utils.misc as misc
+from yolact_edge.utils.tensorboard_helper import SummaryHelper
+import yolact_edge.utils.misc as misc
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from utils.logging_helper import setup_logger
+from yolact_edge.utils.logging_helper import setup_logger
 import logging
 import random
 
