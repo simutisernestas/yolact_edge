@@ -1,11 +1,11 @@
 import os
 import argparse
-from yolact_edge.data.config import cfg, set_cfg
 from pathlib import Path
 import torch
 import torch.backends.cudnn as cudnn
-from yolact_edge.yolact import Yolact
 import matplotlib.pyplot as plt
+from yolact_edge.data.config import cfg, set_cfg
+from yolact_edge.yolact import Yolact
 from yolact_edge.utils.augmentations import FastBaseTransform
 from yolact_edge.eval import prep_display
 

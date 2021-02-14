@@ -2,19 +2,23 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from distutils.core import setup
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
 
-with open('README.rst') as readme_file:
+cmdclass = {}
+cmdclass.update({'build_ext': build_ext})
+ext_modules = [Extension("yolact_edge", ["utils/cython_nms.pyx"])]
+    
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
+requirements = []
 
-requirements = [ ]
+setup_requirements = []
 
-setup_requirements = [ ]
-
-test_requirements = [ ]
+test_requirements = []
 
 setup(
     author="Ernestas Šimutis",
@@ -34,7 +38,7 @@ setup(
     description="YOLACT Edge is real time instance segmentation package.",
     install_requires=requirements,
     license="Apache Software License 2.0",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     include_package_data=True,
     keywords='yolact_edge',
     name='yolact_edge',
@@ -45,4 +49,6 @@ setup(
     url='https://github.com/simutisernestas/yolact_edge',
     version='0.1.0',
     zip_safe=False,
+    cmdclass=cmdclass,
+    ext_modules=ext_modules,
 )
