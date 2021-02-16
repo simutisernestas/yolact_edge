@@ -106,8 +106,8 @@ dev.ipynb
 # not ready
 videos/
 templates/
-data/ssd_dataloader.py
-data/datasets/
+*/data/ssd_dataloader.py
+*/data/datasets/
 doc/visualize.py
 read_results.py
 ssd300_120000/
@@ -121,8 +121,8 @@ test_data_aug.py
 .idea/
 
 # temp checkout soln
-data/datasets/
-data/ssd_dataloader.py
+*/data/datasets/
+*/data/ssd_dataloader.py
 
 # pylint
 .pylintrc
@@ -131,9 +131,9 @@ data/ssd_dataloader.py
 ssd.pytorch/
 
 # some datasets
-data/VOCdevkit/
-data/coco/images/
-data/coco/annotations/
+*/data/VOCdevkit/
+*/data/coco/images/
+*/data/coco/annotations/
 ap_data.pkl
 results/
 logs/
@@ -149,11 +149,11 @@ train.sh
 img/
 scripts/aws-ohio/
 scripts/aws3/
-data/config_dev.py
-data/coco
-data/YoutubeVIS
-data/MOTS
-data/FlyingChairs
-data/sbd
-data/video_files
-data/image_files
+*/data/config_dev.py
+*/data/coco
+*/data/YoutubeVIS
+*/data/MOTS
+*/data/FlyingChairs
+*/data/sbd
+*/data/video_files
+*/data/image_files

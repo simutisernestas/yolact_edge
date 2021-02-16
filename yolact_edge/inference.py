@@ -8,10 +8,11 @@ from collections import defaultdict
 import cv2
 from yolact_edge.data.config import cfg, set_cfg
 from yolact_edge.yolact import Yolact
-from yolact_edge.utils.augmentations import FastBaseTransform
+from yolact_edge.utils.augmentations import FastBaseTransform, BaseTransform
 from yolact_edge.utils import timer
 from yolact_edge.layers.output_utils import postprocess, undo_image_transformation
-from yolact_edge.data import COLORS
+from yolact_edge.data import COLORS, set_dataset
+from yolact_edge.utils.tensorrt import convert_to_tensorrt
 
 iou_thresholds = [x / 100 for x in range(50, 100, 5)]
 coco_cats = {}  # Call prep_coco_cats to fill this
@@ -167,7 +168,7 @@ def parse_args(argv=None):
                         help='The number of frames to evaluate in parallel to make videos play at higher fps.')
     parser.add_argument('--score_threshold', default=0, type=float,
                         help='Detections with a score under this threshold will not be considered. This currently only works in display mode.')
-    parser.add_argument('--dataset', default=None, type=str,
+    parser.add_argument('--dataset', default="youtube_vis_dataset", type=str,  # TODO:
                         help='If specified, override the dataset specified in the config with this one (example: coco2017_dataset).')
     parser.add_argument('--detect', default=False, dest='detect', action='store_true',
                         help='Don\'t evauluate the mask branch at all and only do object detection. This only works for --display and --benchmark.')
@@ -177,13 +178,13 @@ def parse_args(argv=None):
                         help='[Deprecated] Split pretrained FPN weights to two phase FPN (for models trained by YOLACT).')
     parser.add_argument('--drop_weights', default=None, type=str,
                         help='Drop specified weights (split by comma) from existing model.')
-    parser.add_argument('--calib_images', default=None, type=str,
+    parser.add_argument('--calib_images', default=None, type=str,  # TODO:
                         help='Directory of images for TensorRT INT8 calibration, for explanation of this field, please refer to `calib_images` in `data/config.py`.')
     parser.add_argument('--trt_batch_size', default=1, type=int,
                         help='Maximum batch size to use during TRT conversion. This has to be greater than or equal to the batch size the model will take during inferece.')
     parser.add_argument('--disable_tensorrt', default=False, dest='disable_tensorrt', action='store_true',
                         help='Don\'t use TensorRT optimization when specified.')
-    parser.add_argument('--use_fp16_tensorrt', default=False, dest='use_fp16_tensorrt', action='store_true',
+    parser.add_argument('--use_fp16_tensorrt', default=False, dest='use_fp16_tensorrt', action='store_true',  # TODO:
                         help='This replaces all TensorRT INT8 optimization with FP16 optimization when specified.')
 
     parser.set_defaults(no_bar=False, display=False, resume=False, output_coco_json=False, output_web_json=False, shuffle=False,
@@ -194,12 +195,28 @@ def parse_args(argv=None):
 
     if args.output_web_json:
         args.output_coco_json = True
+    print(args)
+
+
+class Args(object):
+    def __init__(self):
+        self.args = {'ap_data_file': 'results/ap_data.pkl', 'bbox_det_file': 'results/bbox_detections.json', 'benchmark': False, 'calib_images': None, 'coco_transfer': False, 'config': None, 'crop': True, 'cuda': True, 'dataset': 'youtube_vis_dataset', 'detect': False, 'deterministic': False, 'disable_tensorrt': False, 'display': False, 'display_bboxes': True, 'display_lincomb': False, 'display_masks': True, 'display_scores': True, 'display_text': True, 'drop_weights': None, 'eval_stride': 5, 'fast_eval': False,
+                     'fast_nms': True, 'image': None, 'images': None, 'mask_det_file': 'results/mask_detections.json', 'mask_proto_debug': False, 'max_images': -1, 'no_bar': False, 'no_hash': False, 'no_sort': False, 'output_coco_json': False, 'output_web_json': False, 'resume': False, 'score_threshold': 0.55, 'seed': None, 'shuffle': False, 'top_k': 5, 'trained_model': None, 'trt_batch_size': 1, 'use_fp16_tensorrt': False, 'video': None, 'video_multiframe': 1, 'web_det_path': 'web/dets/', 'yolact_transfer': False}
+
+    def __getattr__(self, key):
+        return self.get(key)
+
+    def get(self, key):
+        return self.args[key]
 
 
 class YOLACTEdgeInference(object):
 
     def __init__(self, weights_path):
-        parse_args()
+
+        global args
+        a = Args()
+        args = a
 
         # TODO: DANGER => requires proper weights file name!
         model_path = SavePath.from_str(weights_path)
@@ -207,6 +224,11 @@ class YOLACTEdgeInference(object):
         print('Parsed %s from the file name.\n' % config)
         set_cfg(config)
         cfg.mask_proto_debug = False
+        set_dataset(args.dataset)
+        # TODO: param
+        cfg.dataset.calib_images = "/home/ernestas/dyn_obs/src/yolact_edge/yolact_edge/data/YoutubeVIS/calib_images/:prev:next"
+        # print(cfg.dataset.calib_images)
+        # exit()
 
         with torch.no_grad():
             if torch.cuda.is_available():
@@ -221,8 +243,7 @@ class YOLACTEdgeInference(object):
             net = Yolact(training=False)
             net.load_weights(weights_path, args=args)
             net.eval()
-            # TODO:
-            # convert_to_tensorrt(net, cfg, args, transform=BaseTransform())
+            convert_to_tensorrt(net, cfg, args, transform=BaseTransform())
             net = net.cuda()
             self.net = net
 
@@ -258,7 +279,7 @@ class YOLACTEdgeInference(object):
 
         if num_dets_to_consider == 0:
             # No detections found so just output the original image
-            return (img_gpu * 255).byte().cpu().numpy()
+            return None
 
         # Quick and dirty lambda for selecting the color for a particular index
         # Also keeps track of a per-gpu color cache for maximum speed
@@ -340,7 +361,7 @@ class YOLACTEdgeInference(object):
                     cv2.putText(img_numpy, text_str, text_pt, font_face,
                                 font_scale, text_color, font_thickness, cv2.LINE_AA)
 
-        return img_numpy, classes, scores, masks
+        return (img_numpy, classes, scores, masks)
 
     def predict(self, img, show=False):
         frame = torch.Tensor(img).cuda().float()
@@ -351,8 +372,14 @@ class YOLACTEdgeInference(object):
 
         preds = self.net(batch, extras=extras)["pred_outs"]
 
-        img_numpy, classes, scores, masks = self.prep_output(
+        out = self.prep_output(
             preds, frame, None, None, undo_transform=False)
+
+        if out == None:
+            print("No predictions!")
+            return None
+
+        img_numpy, classes, scores, masks = out
 
         if show:
             plt.imshow(img_numpy)

@@ -44,6 +44,8 @@ def convert_to_tensorrt(net, cfg, args, transform):
             logger.debug('Generating calibration dataset for backbone of {} images...'.format(cfg.torch2trt_max_calibration_images))
 
             calib_images = cfg.dataset.calib_images
+            # print(calib_images)
+            # exit()
             if args.calib_images is not None:
                 calib_images = args.calib_images
 
