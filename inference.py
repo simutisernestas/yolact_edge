@@ -359,4 +359,4 @@ class YOLACTEdgeInference(object):
             plt.title("YOLACT Prediction! :)")
             plt.show()
 
-        return {"img": img_numpy, "class": classes, "socre": scores, "mask": masks.squeeze()}
+        return {"img": img_numpy, "class": classes, "score": scores, "mask": masks.squeeze()}
